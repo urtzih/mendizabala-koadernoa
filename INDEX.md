@@ -102,8 +102,7 @@ mendizabala/
 │   │   ├── Dashboard.tsx
 │   │   └── Login.tsx
 │   ├── lib/
-│   │   ├── apiClient.ts        # Cliente API (nuevo - reemplaza Supabase)
-│   │   └── supabaseClient.ts   # (deprecated)
+│   │   └── apiClient.ts        # Cliente API REST
 │   ├── i18n/
 │   │   ├── index.tsx
 │   │   └── locales/

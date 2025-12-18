@@ -4,6 +4,7 @@ import LanguageSwitch from '@/components/LanguageSwitch'
 import Contacts from '@/components/Contacts'
 import Companies from '@/components/Companies'
 import Kanban from '@/components/Kanban'
+import MendizabalaLogo from '@/components/MendizabalaLogo'
 import { apiClient } from '@/lib/apiClient'
 
 export default function Dashboard() {
@@ -20,8 +21,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="app-header">
         <div className="app-logo">
-          <span>🎓</span>
-          <span>{t('app.title')}</span>
+          <MendizabalaLogo size={36} />
         </div>
         <div className="app-nav">
           <LanguageSwitch />

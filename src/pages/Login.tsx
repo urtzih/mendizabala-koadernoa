@@ -9,7 +9,7 @@ export default function Login() {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const allowedDomain = (import.meta.env.VITE_ALLOWED_EMAIL_DOMAIN as string) || 'mendizabala.eus'
+  const allowedDomains = ((import.meta.env.VITE_ALLOWED_EMAIL_DOMAIN as string) || 'mendizabala.eus').split(',').map(d => d.trim())
 
   async function handleRequestOTP() {
     setError(null)
@@ -17,8 +17,8 @@ export default function Login() {
 
     try {
       const domain = email.split('@')[1]?.toLowerCase()
-      if (!domain || domain !== allowedDomain) {
-        setError(`Email debe ser del dominio ${allowedDomain}`)
+      if (!domain || !allowedDomains.includes(domain)) {
+        setError(`Email debe ser de: ${allowedDomains.join(', ')}`)
         return
       }
 
@@ -58,9 +58,13 @@ export default function Login() {
   return (
     <div className="container-sm" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <div className="card" style={{ maxWidth: 420 }}>
-        <div className="card-header">
-          <h1 className="card-title">🎓 {t('app.title')}</h1>
-          <p className="card-description">{t('login.title')}</p>
+        <div className="card-header" style={{ textAlign: 'center', paddingBottom: 'var(--spacing-xl)' }}>
+          <div style={{ marginBottom: 'var(--spacing-lg)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <img src="/logo.png" alt="Mendizabala" style={{ maxHeight: '150px', maxWidth: '100%', objectFit: 'contain' }} />
+          </div>
+          <p className="card-description" style={{ fontSize: 'var(--font-size-lg)', marginTop: 'var(--spacing-md)' }}>
+             {t('login.title')}
+          </p>
         </div>
 
         <div className="card-content">
@@ -72,13 +76,13 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu.email@mendizabala.eus"
+                  placeholder={`tu.email@${allowedDomains[0]}`}
                   disabled={loading}
                   autoFocus
                 />
               </div>
 
-              {error && <div className="alert alert-error">⚠️ {error}</div>}
+              {error && <div className="alert alert-error">{error}</div>}
 
               <button
                 className="primary block"
@@ -86,11 +90,11 @@ export default function Login() {
                 disabled={loading || !email.trim()}
                 style={{ marginTop: 'var(--spacing-lg)' }}
               >
-                {loading ? '⏳ Enviando...' : t('login.button')}
+                {loading ? 'Enviando...' : t('login.button')}
               </button>
 
               <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)', marginTop: 'var(--spacing-lg)', textAlign: 'center' }}>
-                Solo emails del dominio <strong>{allowedDomain}</strong>
+                Solo emails del dominio <strong>{allowedDomains.join(', ')}</strong>
               </p>
             </>
           ) : (
@@ -113,7 +117,7 @@ export default function Login() {
                 />
               </div>
 
-              {error && <div className="alert alert-error">⚠️ {error}</div>}
+              {error && <div className="alert alert-error">{error}</div>}
 
               <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
                 <button
@@ -128,7 +132,7 @@ export default function Login() {
                   onClick={handleVerifyOTP}
                   disabled={loading || otp.length !== 6}
                 >
-                  {loading ? '⏳ Verificando...' : 'Continuar'}
+                  {loading ? 'Verificando...' : 'Continuar'}
                 </button>
               </div>
 

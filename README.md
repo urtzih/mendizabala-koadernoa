@@ -38,7 +38,7 @@ Aplicación para gestión de contactos (profesorado), empresas colaboradoras y a
 ├── src/                          # Código frontend (React + TypeScript)
 │   ├── components/              # Componentes reutilizables
 │   ├── pages/                   # Dashboard, Login
-│   ├── lib/                     # apiClient.ts, supabaseClient.ts
+│   ├── lib/                     # apiClient.ts (REST client)
 │   ├── i18n/                    # Traducciones
 │   └── main.tsx
 ├── backend/                      # Código backend (Node.js + Express) **NEW**

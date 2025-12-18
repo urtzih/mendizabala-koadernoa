@@ -34,6 +34,17 @@ export async function sendMagicLink(email, otp) {
     expires: Date.now() + 10 * 60 * 1000,
   })
 
+  // En desarrollo, mostrar OTP en consola
+  if (process.env.NODE_ENV === 'development') {
+    console.log('\n========================================')
+    console.log(`🔐 OTP para ${email}: ${otp}`)
+    console.log('📋 Copia este código y úsalo en el login')
+    console.log('⏰ Válido por 10 minutos')
+    console.log('========================================\n')
+    return true
+  }
+
+  // En producción, enviar email
   const mailOptions = {
     from: process.env.SMTP_FROM || 'noreply@mendizabala.eus',
     to: email,
@@ -48,9 +59,10 @@ export async function sendMagicLink(email, otp) {
 
   try {
     await transporter.sendMail(mailOptions)
+    console.log(`✉️ Email enviado a ${email}`)
     return true
   } catch (err) {
-    console.error('Error sending email:', err)
+    console.error('❌ Error sending email:', err)
     return false
   }
 }

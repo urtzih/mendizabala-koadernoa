@@ -7,7 +7,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const router = express.Router()
-const ALLOWED_DOMAIN = process.env.ALLOWED_EMAIL_DOMAIN || 'mendizabala.eus'
+const ALLOWED_DOMAINS = (process.env.ALLOWED_EMAIL_DOMAIN || 'mendizabala.eus').split(',').map(d => d.trim())
 
 /**
  * POST /auth/request-otp
@@ -25,8 +25,8 @@ router.post('/request-otp', async (req, res) => {
     const domain = normalizedEmail.split('@')[1]
 
     // Validar dominio
-    if (!domain || domain !== ALLOWED_DOMAIN) {
-      return res.status(403).json({ error: `Solo emails del dominio ${ALLOWED_DOMAIN}` })
+    if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
+      return res.status(403).json({ error: `Solo emails de los dominios: ${ALLOWED_DOMAINS.join(', ')}` })
     }
 
     // Generar OTP
