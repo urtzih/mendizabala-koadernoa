@@ -1,0 +1,29 @@
+{
+  "name": "mendizabala-backend",
+  "version": "1.0.0",
+  "description": "Backend API para Mendizabala LHII - Open Source",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3",
+    "jsonwebtoken": "^9.1.2",
+    "bcryptjs": "^2.4.3",
+    "nodemailer": "^6.9.7",
+    "ws": "^8.14.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "node-dev": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
