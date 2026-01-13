@@ -45,7 +45,6 @@ class ApiClient {
 
     if (response.status === 401) {
       this.clearToken()
-      window.location.href = '/login'
     }
 
     const data = await response.json()
@@ -57,18 +56,12 @@ class ApiClient {
     return data
   }
 
-  // ========== AUTH ==========
-  async requestOTP(email: string): Promise<any> {
-    return this.request('/auth/request-otp', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    })
-  }
 
-  async verifyOTP(email: string, otp: string): Promise<any> {
-    const data = await this.request('/auth/verify-otp', {
+  // ========== AUTH ========== 
+  async login(email: string, password: string): Promise<any> {
+    const data = await this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, otp }),
+      body: JSON.stringify({ email, password }),
     })
     if (data.token) {
       this.setToken(data.token)

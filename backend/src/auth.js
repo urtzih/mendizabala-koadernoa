@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 
-dotenv.config()
+dotenv.config({ path: '../../.env' })
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production'
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d'
@@ -9,9 +9,9 @@ const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d'
 /**
  * Generar JWT token
  */
-export function generateToken(userId, email) {
+export function generateToken(userId, email, roles = []) {
   return jwt.sign(
-    { userId, email },
+    { userId, email, roles },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRY }
   )

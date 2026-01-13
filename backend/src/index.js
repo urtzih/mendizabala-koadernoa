@@ -6,14 +6,23 @@ import teachersRoutes from './routes/teachers.js'
 import companiesRoutes from './routes/companies.js'
 import { authMiddleware } from './auth.js'
 
-dotenv.config()
+dotenv.config({ path: '../../.env' })
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
 // Middleware
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173,http://localhost:5174').split(',')
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Permitir solicitudes sin origen (como herramientas de prueba o apps móviles)
+    if (!origin) return callback(null, true)
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
 }))
 app.use(express.json())

@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer'
 import dotenv from 'dotenv'
 import crypto from 'crypto'
 
-dotenv.config()
+dotenv.config({ path: '../../.env' })
 
 // Almacenamiento temporal de OTP (en producción usar Redis)
 const otpStore = new Map()

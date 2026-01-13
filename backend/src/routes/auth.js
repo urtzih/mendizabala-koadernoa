@@ -1,49 +1,98 @@
 import express from 'express'
 import pool from '../db.js'
 import { generateToken } from '../auth.js'
-import { sendMagicLink, generateOTP, verifyOTP } from '../email.js'
+import bcrypt from 'bcryptjs'
+
+// import { sendMagicLink, generateOTP, verifyOTP } from '../email.js'
 import dotenv from 'dotenv'
 
-dotenv.config()
+dotenv.config({ path: '../../.env' })
 
 const router = express.Router()
 const ALLOWED_DOMAINS = (process.env.ALLOWED_EMAIL_DOMAIN || 'mendizabala.eus').split(',').map(d => d.trim())
 
+
 /**
- * POST /auth/request-otp
- * Solicitar código de acceso
+ * POST /auth/register
+ * Registrar nuevo usuario
+ * body: { email, password, name, roles: ["admin", "teacher", ...] }
  */
-router.post('/request-otp', async (req, res) => {
+router.post('/register', async (req, res) => {
   try {
-    const { email } = req.body
-
-    if (!email || typeof email !== 'string') {
-      return res.status(400).json({ error: 'Email requerido' })
+    const { email, password, name, roles } = req.body
+    if (!email || !password || !Array.isArray(roles) || roles.length === 0) {
+      return res.status(400).json({ error: 'Email, password y roles requeridos' })
     }
-
     const normalizedEmail = email.toLowerCase()
-    const domain = normalizedEmail.split('@')[1]
-
     // Validar dominio
+    const domain = normalizedEmail.split('@')[1]
     if (!domain || !ALLOWED_DOMAINS.includes(domain)) {
       return res.status(403).json({ error: `Solo emails de los dominios: ${ALLOWED_DOMAINS.join(', ')}` })
     }
-
-    // Generar OTP
-    const otp = generateOTP()
-
-    // Enviar email
-    const sent = await sendMagicLink(normalizedEmail, otp)
-
-    if (!sent) {
-      // En desarrollo, retornar el OTP para pruebas
-      if (process.env.NODE_ENV === 'development') {
-        return res.json({ message: 'Check email (DEV: OTP is ' + otp + ')' })
-      }
-      return res.status(500).json({ error: 'Error enviando email' })
+    // Comprobar si ya existe
+    const exists = await pool.query('SELECT id FROM users WHERE email = $1', [normalizedEmail])
+    if (exists.rows.length > 0) {
+      return res.status(409).json({ error: 'Usuario ya existe' })
     }
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10)
+    // Crear usuario
+    const userResult = await pool.query(
+      'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id',
+      [normalizedEmail, password_hash, name || normalizedEmail.split('@')[0]]
+    )
+    const userId = userResult.rows[0].id
+    // Asignar roles
+    for (const roleName of roles) {
+      const roleRes = await pool.query('SELECT id FROM roles WHERE name = $1', [roleName])
+      if (roleRes.rows.length > 0) {
+        await pool.query('INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [userId, roleRes.rows[0].id])
+      }
+    }
+    res.json({ message: 'Usuario registrado', userId })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Error interno del servidor' })
+  }
+})
 
-    res.json({ message: 'Código enviado al email' })
+/**
+ * POST /auth/login
+ * Login estándar con email y password
+ * body: { email, password }
+ */
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email y password requeridos' })
+    }
+    const normalizedEmail = email.toLowerCase()
+    const userRes = await pool.query('SELECT id, password_hash, name FROM users WHERE email = $1', [normalizedEmail])
+    if (userRes.rows.length === 0) {
+      return res.status(401).json({ error: 'Credenciales incorrectas' })
+    }
+    const user = userRes.rows[0]
+    const valid = await bcrypt.compare(password, user.password_hash)
+    if (!valid) {
+      return res.status(401).json({ error: 'Credenciales incorrectas' })
+    }
+    // Obtener roles
+    const rolesRes = await pool.query(
+      'SELECT r.name FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = $1',
+      [user.id]
+    )
+    const roles = rolesRes.rows.map(r => r.name)
+    // Generar JWT con roles
+    const token = generateToken(user.id, normalizedEmail, roles)
+    res.json({
+      message: 'Sesión iniciada',
+      token,
+      userId: user.id,
+      email: normalizedEmail,
+      name: user.name,
+      roles
+    })
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Error interno del servidor' })
@@ -64,7 +113,45 @@ router.post('/verify-otp', async (req, res) => {
 
     const normalizedEmail = email.toLowerCase()
 
-    // Verificar OTP
+
+    // Login rápido por código en entorno local
+    if (process.env.NODE_ENV === 'development') {
+      if (otp === process.env.LOGIN_CODE_ADMIN) {
+        // Usuario admin
+        const token = generateToken('admin', normalizedEmail)
+        return res.json({
+          message: 'Sesión iniciada (admin)',
+          token,
+          userId: 'admin',
+          email: normalizedEmail,
+          role: 'admin',
+        })
+      }
+      if (otp === process.env.LOGIN_CODE_TEACHER) {
+        // Usuario teacher
+        const token = generateToken('teacher', normalizedEmail)
+        return res.json({
+          message: 'Sesión iniciada (teacher)',
+          token,
+          userId: 'teacher',
+          email: normalizedEmail,
+          role: 'teacher',
+        })
+      }
+      if (otp === process.env.LOGIN_CODE_COMPANY) {
+        // Usuario company
+        const token = generateToken('company', normalizedEmail)
+        return res.json({
+          message: 'Sesión iniciada (company)',
+          token,
+          userId: 'company',
+          email: normalizedEmail,
+          role: 'company',
+        })
+      }
+    }
+
+    // Verificar OTP normal
     if (!verifyOTP(normalizedEmail, otp)) {
       return res.status(401).json({ error: 'Código inválido o expirado' })
     }
